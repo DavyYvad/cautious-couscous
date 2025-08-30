@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>waples.network</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #0f0f1e 25%, #0a0a0a 50%, #151520 75%, #0a0a0a 100%);
+            background-size: 400% 400%;
+            animation: subtleShift 30s ease infinite;
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            cursor: default;
+        }
+
+        @keyframes subtleShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Canvas de fond */
+        #starfield-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Navbar - Style Apple épuré */
+        .navbar {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            gap: 32px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border: 0.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .nav-item {
+            position: relative;
+            color: rgba(255, 255, 255, 0.65);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            transition: color 0.3s ease;
+        }
+
+        .nav-item:hover {
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .nav-item.active {
+            color: #ffffff;
+        }
+
+        /* Conteneur principal */
+        .main-container {
+            position: relative;
+            z-index: 100;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* Titre principal - Style minimaliste */
+        .main-title {
+            font-size: clamp(3.5rem, 7vw, 5.5rem);
+            font-weight: 200;
+            letter-spacing: -0.04em;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            opacity: 0;
+            animation: fadeInUp 1.2s ease forwards;
+            animation-delay: 0.3s;
+            background: linear-gradient(135deg, 
+                #9b87f5 0%, 
+                #6E59A5 50%, 
+                #8B7FD6 100%
+            );
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: subtleGradient 10s ease infinite, fadeInUp 1.2s ease forwards;
+        }
+
+        @keyframes subtleGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+            opacity: 0;
+            animation: fadeInUp 1.2s ease forwards;
+            animation-delay: 0.5s;
+            letter-spacing: -0.01em;
+        }
+
+        /* Boutons sociaux - Style épuré */
+        .social-container {
+            position: fixed;
+            bottom: 32px;
+            left: 32px;
+            z-index: 500;
+            display: flex;
+            gap: 12px;
+        }
+
+        .social-btn {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 0.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Bouton contact - Style épuré */
+        .contact-toggle {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            z-index: 501;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 0.5px solid rgba(255, 255, 255, 0.18);
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .contact-toggle:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Formulaire de contact - Glassmorphisme Apple */
+        .contact-form {
+            position: fixed;
+            bottom: 100px;
+            right: 32px;
+            z-index: 500;
+            width: 340px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border: 0.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        .contact-form.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
+        }
+
+        .contact-form h3 {
+            margin-bottom: 20px;
+            font-weight: 400;
+            font-size: 20px;
+            letter-spacing: -0.02em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(155, 135, 245, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .form-submit {
+            width: 100%;
+            padding: 12px;
+            background: rgba(155, 135, 245, 0.15);
+            border: 0.5px solid rgba(155, 135, 245, 0.3);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-submit:hover {
+            background: rgba(155, 135, 245, 0.25);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(155, 135, 245, 0.2);
+        }
+
+        /* Styles pour les Orbes */
+        .space-orb {
+            position: fixed;
+            width: 80px;
+            height: 80px;
+            z-index: 250;
+            cursor: move;
+            user-select: none;
+            transition: transform 0.1s ease;
+        }
+
+        .space-orb:hover {
+            transform: scale(1.1);
+        }
+
+        .orb-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border-radius: 50%;
+            overflow: hidden;
+            background: radial-gradient(circle at 30% 30%, 
+                rgba(155, 135, 245, 0.2),
+                rgba(110, 89, 165, 0.1),
+                transparent
+            );
+            box-shadow: 
+                0 0 40px rgba(155, 135, 245, 0.3),
+                inset 0 0 20px rgba(155, 135, 245, 0.2);
+            animation: orbPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes orbPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 
+                    0 0 40px rgba(155, 135, 245, 0.3),
+                    inset 0 0 20px rgba(155, 135, 245, 0.2);
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 
+                    0 0 60px rgba(155, 135, 245, 0.5),
+                    inset 0 0 30px rgba(155, 135, 245, 0.3);
+            }
+        }
+
+        .orb-image {
+            width: 60%;
+            height: 60%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid rgba(155, 135, 245, 0.3);
+            opacity: 0.9;
+        }
+
+        .orb-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1px solid rgba(155, 135, 245, 0.2);
+            animation: orbRing 3s linear infinite;
+        }
+
+        @keyframes orbRing {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* Info Panel pour les Orbes */
+        .orb-info-panel {
+            position: fixed;
+            z-index: 600;
+            width: 320px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border: 0.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            opacity: 0;
+            transform: scale(0.9) translateY(10px);
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .orb-info-panel.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: all;
+        }
+
+        .orb-info-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .orb-info-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid rgba(155, 135, 245, 0.3);
+        }
+
+        .orb-info-title {
+            flex: 1;
+        }
+
+        .orb-info-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: -0.01em;
+        }
+
+        .orb-info-role {
+            font-size: 13px;
+            color: rgba(155, 135, 245, 0.8);
+            margin-top: 2px;
+        }
+
+        .orb-info-description {
+            font-size: 14px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 16px;
+        }
+
+        .orb-info-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .orb-info-close:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        }
+
+        /* Effet de curseur subtil */
+        .cursor-glow {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, 
+                rgba(155, 135, 245, 0.15),
+                transparent
+            );
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 9998;
+            transition: transform 0.1s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 10px 20px;
+                gap: 20px;
+            }
+            
+            .contact-form {
+                width: calc(100vw - 64px);
+                right: 32px;
+                left: 32px;
+            }
+            
+            .social-container {
+                gap: 8px;
+            }
+
+            .orb-info-panel {
+                width: calc(100vw - 64px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starfield-canvas"></canvas>
+    
+    <!-- Curseur glow -->
+    <div class="cursor-glow" id="cursorGlow"></div>
+    
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="#home" class="nav-item active">Home</a>
+        <a href="#about" class="nav-item">About</a>
+        <a href="#projects" class="nav-item">Projects</a>
+        <a href="#contact" class="nav-item">Contact</a>
+    </nav>
+
+    <!-- Container principal -->
+    <div class="main-container">
+        <h1 class="main-title">waples.network</h1>
+        <p class="subtitle">Navigate through the cosmos</p>
+    </div>
+
+    <!-- Boutons sociaux -->
+    <div class="social-container">
+        <a href="#" class="social-btn">
+            <span>𝕏</span>
+        </a>
+        <a href="#" class="social-btn">
+            <span>◐</span>
+        </a>
+        <a href="#" class="social-btn">
+            <span>▶</span>
+        </a>
+    </div>
+
+    <!-- Bouton contact -->
+    <button class="contact-toggle" onclick="toggleContact()">
+        ✉
+    </button>
+
+    <!-- Formulaire de contact -->
+    <div class="contact-form" id="contactForm">
+        <h3>Get in touch</h3>
+        <input type="text" class="form-input" placeholder="Name">
+        <input type="email" class="form-input" placeholder="Email">
+        <textarea class="form-input" placeholder="Message" rows="4"></textarea>
+        <button class="form-submit">Send Message</button>
+    </div>
+
+    <!-- Panel d'info des orbes -->
+    <div class="orb-info-panel" id="orbInfoPanel">
+        <button class="orb-info-close" onclick="closeOrbInfo()">×</button>
+        <div class="orb-info-header">
+            <img src="" alt="" class="orb-info-avatar" id="orbInfoAvatar">
+            <div class="orb-info-title">
+                <div class="orb-info-name" id="orbInfoName"></div>
+                <div class="orb-info-role" id="orbInfoRole"></div>
+            </div>
+        </div>
+        <div class="orb-info-description" id="orbInfoDescription"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            STAR_DENSITY: 3000,
+            SHOOTING_STAR_CHANCE: 0.008,
+            MOUSE_INFLUENCE_RADIUS: 200,
+            CONSTELLATION_DISTANCE: 70,
+            ORB_PULSE_RADIUS: 150,
+            ORB_DISTORTION_RADIUS: 200, // Rayon de distorsion spatiale
+            ORB_DISTORTION_STRENGTH: 1.8 // Force de la distorsion
+        };
+
+        // Canvas et contexte
+        const canvas = document.getElementById('starfield-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Variables globales
+        let stars = [];
+        let shootingStars = [];
+        let nebulae = [];
+        let orbs = [];
+        let mousePosition = { x: 0, y: 0 };
+        let animationId = null;
+        let currentOpenOrb = null;
+        
+        // Configuration du canvas
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        // Classe Star avec effet de distorsion spatiale
+        class Star {
+            constructor(x, y, size, speed) {
+                this.x = x;
+                this.y = y;
+                this.baseX = x;
+                this.baseY = y;
+                this.size = size;
+                this.speed = speed;
+                this.brightness = Math.random() * 0.5 + 0.5;
+                this.twinkleSpeed = Math.random() * 0.015 + 0.005;
+                this.orbInfluence = 0;
+                this.distortedX = x;
+                this.distortedY = y;
+                this.previousOrbPositions = new Map(); // Pour tracker le mouvement des orbes
+            }
+            
+            update() {
+                // Animation de scintillement
+                this.brightness += this.twinkleSpeed;
+                if (this.brightness > 1 || this.brightness < 0.2) {
+                    this.twinkleSpeed = -this.twinkleSpeed;
+                }
+                
+                // Réinitialiser l'influence des orbes et la position distordue
+                this.orbInfluence = 0;
+                let totalDistortionX = 0;
+                let totalDistortionY = 0;
+                let maxDistortionInfluence = 0;
+                
+                // Calcul de la distorsion spatiale par les orbes
+                orbs.forEach(orb => {
+                    const deltaX = this.x - orb.x;
+                    const deltaY = this.y - orb.y;
+                    const distance = Math.hypot(deltaX, deltaY);
+                    
+                    // Vérifier si l'orbe a bougé (pour amplifier l'effet lors du drag)
+                    let velocityMultiplier = 1;
+                    if (this.previousOrbPositions.has(orb.id)) {
+                        const prevPos = this.previousOrbPositions.get(orb.id);
+                        const orbVelocity = Math.hypot(orb.x - prevPos.x, orb.y - prevPos.y);
+                        velocityMultiplier = 1 + Math.min(orbVelocity * 0.1, 3); // Amplification basée sur la vitesse
+                    }
+                    this.previousOrbPositions.set(orb.id, { x: orb.x, y: orb.y });
+                    
+                    // Effet de distorsion spatiale
+                    if (distance < CONFIG.ORB_DISTORTION_RADIUS && distance > 0) {
+                        const distortionForce = Math.pow((CONFIG.ORB_DISTORTION_RADIUS - distance) / CONFIG.ORB_DISTORTION_RADIUS, 2);
+                        const angle = Math.atan2(deltaY, deltaX);
+                        
+                        // Calcul de la distorsion avec effet "vortex"
+                        const spiralFactor = distance / CONFIG.ORB_DISTORTION_RADIUS;
+                        const tangentAngle = angle + Math.PI / 2 * spiralFactor; // Angle tangent pour l'effet spiral
+                        
+                        // Composante radiale (répulsion/attraction)
+                        const radialStrength = distortionForce * CONFIG.ORB_DISTORTION_STRENGTH * velocityMultiplier;
+                        const radialDistortionX = Math.cos(angle) * radialStrength * 30;
+                        const radialDistortionY = Math.sin(angle) * radialStrength * 30;
+                        
+                        // Composante tangentielle (rotation)
+                        const tangentStrength = distortionForce * CONFIG.ORB_DISTORTION_STRENGTH * 0.3 * velocityMultiplier;
+                        const tangentDistortionX = Math.cos(tangentAngle) * tangentStrength * 20;
+                        const tangentDistortionY = Math.sin(tangentAngle) * tangentStrength * 20;
+                        
+                        // Combiner les distorsions
+                        totalDistortionX += radialDistortionX + tangentDistortionX;
+                        totalDistortionY += radialDistortionY + tangentDistortionY;
+                        
+                        // Influence pour l'effet de brillance
+                        maxDistortionInfluence = Math.max(maxDistortionInfluence, distortionForce);
+                    }
+                    
+                    // Effet de pulse lumineux (plus subtil)
+                    if (distance < CONFIG.ORB_PULSE_RADIUS) {
+                        const influence = (CONFIG.ORB_PULSE_RADIUS - distance) / CONFIG.ORB_PULSE_RADIUS;
+                        this.orbInfluence = Math.max(this.orbInfluence, influence * orb.pulseIntensity * 0.5);
+                    }
+                });
+                
+                // Appliquer la distorsion avec interpolation douce
+                const smoothingFactor = 0.15; // Plus c'est bas, plus c'est fluide
+                this.distortedX += (this.x + totalDistortionX - this.distortedX) * smoothingFactor;
+                this.distortedY += (this.y + totalDistortionY - this.distortedY) * smoothingFactor;
+                
+                // Ajouter l'influence de distorsion à la brillance
+                this.orbInfluence = Math.max(this.orbInfluence, maxDistortionInfluence * 0.3);
+                
+                // Interaction avec la souris
+                const deltaX = mousePosition.x - this.x;
+                const deltaY = mousePosition.y - this.y;
+                const distance = Math.hypot(deltaX, deltaY);
+                
+                if (distance < CONFIG.MOUSE_INFLUENCE_RADIUS) {
+                    const force = (CONFIG.MOUSE_INFLUENCE_RADIUS - distance) / CONFIG.MOUSE_INFLUENCE_RADIUS;
+                    this.x += (deltaX * force) * 0.02;
+                    this.y += (deltaY * force) * 0.02;
+                } else {
+                    // Retour à la position de base
+                    this.x += (this.baseX - this.x) * 0.05;
+                    this.y += (this.baseY - this.y) * 0.05;
+                }
+                
+                // Dérive subtile
+                const time = Date.now() * 0.00005 * this.speed;
+                this.baseX += Math.sin(time) * 0.03;
+                this.baseY += Math.cos(time) * 0.015;
+            }
+            
+            render() {
+                ctx.save();
+                const totalBrightness = this.brightness * (1 + this.orbInfluence * 0.5);
+                ctx.globalAlpha = Math.min(totalBrightness * 0.8, 1);
+                
+                // Utiliser la position distordue pour le rendu
+                const renderX = this.distortedX;
+                const renderY = this.distortedY;
+                
+                // Halo subtil (plus brillant si influencé par orbe)
+                const gradient = ctx.createRadialGradient(
+                    renderX, renderY, 0,
+                    renderX, renderY, this.size * 3 * (1 + this.orbInfluence)
+                );
+                
+                if (this.orbInfluence > 0) {
+                    gradient.addColorStop(0, `rgba(155, 135, 245, ${0.6 + this.orbInfluence * 0.3})`);
+                    gradient.addColorStop(0.4, `rgba(110, 95, 200, ${0.2 + this.orbInfluence * 0.2})`);
+                } else {
+                    gradient.addColorStop(0, 'rgba(155, 135, 245, 0.6)');
+                    gradient.addColorStop(0.4, 'rgba(110, 95, 200, 0.2)');
+                }
+                gradient.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(renderX, renderY, this.size * 3 * (1 + this.orbInfluence * 0.5), 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Noyau de l'étoile
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.beginPath();
+                ctx.arc(renderX, renderY, this.size * (1 + this.orbInfluence * 0.3), 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        // Classe Orb pour les orbes spatiales
+        class Orb {
+            constructor(config) {
+                this.id = config.id;
+                this.x = config.x || Math.random() * (window.innerWidth - 200) + 100;
+                this.y = config.y || Math.random() * (window.innerHeight - 200) + 100;
+                this.image = config.image;
+                this.name = config.name;
+                this.role = config.role;
+                this.description = config.description;
+                this.pulseIntensity = 0;
+                this.pulseDirection = 1;
+                this.element = null;
+                this.isDragging = false;
+                this.dragOffset = { x: 0, y: 0 };
+                this.hasMoved = false;
+                
+                this.createElement();
+            }
+            
+            createElement() {
+                const orbDiv = document.createElement('div');
+                orbDiv.className = 'space-orb';
+                orbDiv.style.left = `${this.x - 40}px`;
+                orbDiv.style.top = `${this.y - 40}px`;
+                orbDiv.innerHTML = `
+                    <div class="orb-inner">
+                        <div class="orb-ring"></div>
+                        <img src="${this.image}" alt="${this.name}" class="orb-image" draggable="false">
+                    </div>
+                `;
+                
+                // Event listeners pour drag and drop
+                orbDiv.addEventListener('mousedown', (e) => this.startDrag(e));
+                orbDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!this.hasMoved) {
+                        this.toggleInfo();
+                    }
+                });
+                
+                document.body.appendChild(orbDiv);
+                this.element = orbDiv;
+            }
+            
+            startDrag(e) {
+                e.stopPropagation();
+                this.hasMoved = false;
+                const startX = e.clientX;
+                const startY = e.clientY;
+                this.dragOffset.x = startX - this.x;
+                this.dragOffset.y = startY - this.y;
+                
+                const mouseMoveHandler = (e) => {
+                    const deltaX = Math.abs(e.clientX - startX);
+                    const deltaY = Math.abs(e.clientY - startY);
+                    
+                    if (deltaX > 5 || deltaY > 5) {
+                        this.hasMoved = true;
+                        if (currentOpenOrb === this) {
+                            closeOrbInfo();
+                        }
+                    }
+                    
+                    this.x = e.clientX - this.dragOffset.x;
+                    this.y = e.clientY - this.dragOffset.y;
+                    this.element.style.left = `${this.x - 40}px`;
+                    this.element.style.top = `${this.y - 40}px`;
+                };
+                
+                const mouseUpHandler = () => {
+                    document.removeEventListener('mousemove', mouseMoveHandler);
+                    document.removeEventListener('mouseup', mouseUpHandler);
+                };
+                
+                document.addEventListener('mousemove', mouseMoveHandler);
+                document.addEventListener('mouseup', mouseUpHandler);
+            }
+            
+            toggleInfo() {
+                if (currentOpenOrb === this) {
+                    closeOrbInfo();
+                } else {
+                    this.showInfo();
+                }
+            }
+            
+            showInfo() {
+                const panel = document.getElementById('orbInfoPanel');
+                const avatar = document.getElementById('orbInfoAvatar');
+                const name = document.getElementById('orbInfoName');
+                const role = document.getElementById('orbInfoRole');
+                const description = document.getElementById('orbInfoDescription');
+                
+                avatar.src = this.image;
+                name.textContent = this.name;
+                role.textContent = this.role;
+                description.textContent = this.description;
+                
+                const panelWidth = 320;
+                let panelX = this.x + 60;
+                let panelY = this.y - 50;
+                
+                if (panelX + panelWidth > window.innerWidth - 32) {
+                    panelX = this.x - panelWidth - 60;
+                }
+                if (panelY < 32) {
+                    panelY = 32;
+                }
+                
+                panel.style.left = `${panelX}px`;
+                panel.style.top = `${panelY}px`;
+                panel.classList.add('active');
+                
+                currentOpenOrb = this;
+            }
+            
+            update() {
+                // Animation du pulse
+                this.pulseIntensity += 0.02 * this.pulseDirection;
+                if (this.pulseIntensity >= 1 || this.pulseIntensity <= 0) {
+                    this.pulseDirection *= -1;
+                }
+            }
+        }
+        
+        // Fonction pour fermer le panel d'info
+        function closeOrbInfo() {
+            const panel = document.getElementById('orbInfoPanel');
+            panel.classList.remove('active');
+            currentOpenOrb = null;
+        }
+        
+        // Classe Nebula ajustée (couleurs plus sombres)
+        class Nebula {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 150 + 80;
+                this.opacity = Math.random() * 0.015 + 0.005;
+                this.hue = Math.random() * 40 + 250;
+            }
+            
+            render() {
+                ctx.save();
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.radius
+                );
+                gradient.addColorStop(0, `hsla(${this.hue}, 60%, 35%, ${this.opacity})`);
+                gradient.addColorStop(0.5, `hsla(${this.hue}, 50%, 25%, ${this.opacity * 0.5})`);
+                gradient.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        // Classe ShootingStar fournie par l'utilisateur
+        class ShootingStar {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = 0;
+                this.velocity = Math.random() * 10 + 5;
+                this.length = Math.random() * 80 + 20;
+                this.opacity = 1;
+                this.decayRate = 0.01;
+            }
+            
+            update() {
+                this.x -= this.velocity;
+                this.y += this.velocity * 0.5;
+                this.opacity -= this.decayRate;
+                return this.opacity > 0;
+            }
+            
+            render() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                
+                const gradient = ctx.createLinearGradient(
+                    this.x, this.y,
+                    this.x + this.length, this.y - this.length * 0.5
+                );
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 1)');
+                
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x + this.length, this.y - this.length * 0.5);
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+        }
+        
+        // Initialisation des éléments
+        function initStars() {
+            stars = [];
+            nebulae = [];
+            const starCount = Math.floor((canvas.width * canvas.height) / CONFIG.STAR_DENSITY);
+            
+            for (let i = 0; i < 4; i++) {
+                nebulae.push(new Nebula());
+            }
+            
+            for (let i = 0; i < starCount; i++) {
+                stars.push(new Star(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height,
+                    Math.random() * 1.2 + 0.3,
+                    Math.random() * 2 + 1
+                ));
+            }
+        }
+
+        // Initialisation des orbes
+        function initOrbs() {
+            orbs.push(new Orb({
+                id: 'discord',
+                image: 'http://cdn.discordapp.com/avatars/1081328094209642668/4b2d28180dabe1e7415b6f9e51486f6a?size=1024',
+                name: 'Waples',
+                role: 'Founder',
+                description: 'Pioneering the digital cosmos, one nebula at a time. Building bridges between worlds in the vast network of stars.',
+                x: window.innerWidth * 0.25,
+                y: window.innerHeight * 0.3
+            }));
+            
+            orbs.push(new Orb({
+                id: 'team1',
+                image: 'https://cdn.discordapp.com/embed/avatars/1.png',
+                name: 'Nebula',
+                role: 'Developer',
+                description: 'Crafting stellar experiences in the void. Specializing in quantum computing and interdimensional protocols.',
+                x: window.innerWidth * 0.7,
+                y: window.innerHeight * 0.6
+            }));
+        }
+        
+        // Connexion des étoiles proches (utilise les positions distordues)
+        function renderConstellations() {
+            const nearbyStars = [];
+            
+            stars.forEach(star => {
+                const distToMouse = Math.hypot(star.distortedX - mousePosition.x, star.distortedY - mousePosition.y);
+                if (distToMouse < CONFIG.MOUSE_INFLUENCE_RADIUS * 1.5) {
+                    nearbyStars.push(star);
+                }
+            });
+            
+            for (let i = 0; i < nearbyStars.length; i++) {
+                for (let j = i + 1; j < nearbyStars.length; j++) {
+                    const deltaX = nearbyStars[i].distortedX - nearbyStars[j].distortedX;
+                    const deltaY = nearbyStars[i].distortedY - nearbyStars[j].distortedY;
+                    const distance = Math.hypot(deltaX, deltaY);
+                    
+                    if (distance < CONFIG.CONSTELLATION_DISTANCE) {
+                        ctx.save();
+                        const opacity = (1 - distance / CONFIG.CONSTELLATION_DISTANCE) * 0.2 * nearbyStars[i].brightness;
+                        ctx.strokeStyle = `rgba(155, 135, 245, ${opacity})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(nearbyStars[i].distortedX, nearbyStars[i].distortedY);
+                        ctx.lineTo(nearbyStars[j].distortedX, nearbyStars[j].distortedY);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            }
+        }
+        
+        // Boucle d'animation principale
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            nebulae.forEach(nebula => nebula.render());
+            
+            orbs.forEach(orb => orb.update());
+            
+            stars.forEach(star => {
+                star.update();
+                star.render();
+            });
+            
+            renderConstellations();
+            
+            if (Math.random() < CONFIG.SHOOTING_STAR_CHANCE) {
+                shootingStars.push(new ShootingStar());
+            }
+            
+            shootingStars = shootingStars.filter(star => {
+                const isAlive = star.update();
+                if (isAlive) star.render();
+                return isAlive;
+            });
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Toggle formulaire de contact
+        function toggleContact() {
+            const form = document.getElementById('contactForm');
+            form.classList.toggle('active');
+        }
+        
+        // Curseur glow
+        const cursorGlow = document.getElementById('cursorGlow');
+        
+        // Gestionnaires d'événements
+        function handleResize() {
+            initCanvas();
+            initStars();
+        }
+        
+        function handleMouseMove(event) {
+            mousePosition.x = event.clientX;
+            mousePosition.y = event.clientY;
+            
+            if (cursorGlow) {
+                cursorGlow.style.left = event.clientX + 'px';
+                cursorGlow.style.top = event.clientY + 'px';
+            }
+        }
+        
+        // Clic global pour fermer le panel
+        function handleGlobalClick(event) {
+            const panel = document.getElementById('orbInfoPanel');
+            const isClickOnPanel = panel.contains(event.target);
+            const isClickOnOrb = event.target.closest('.space-orb');
+            
+            if (!isClickOnPanel && !isClickOnOrb && currentOpenOrb) {
+                closeOrbInfo();
+            }
+        }
+        
+        // Gestion des liens de navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Initialisation
+        function init() {
+            initCanvas();
+            initStars();
+            initOrbs();
+            animate();
+            
+            window.addEventListener('resize', handleResize);
+            window.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('click', handleGlobalClick);
+        }
+        
+        // Nettoyage
+        function cleanup() {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('click', handleGlobalClick);
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        }
+        
+        // Démarrage
+        init();
+        
+        // Nettoyage au déchargement de la page
+        window.addEventListener('beforeunload', cleanup);
+    </script>
+</body>
+</html>
