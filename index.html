@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>waples.me</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-    
+    <canvas id="starfield-canvas"></canvas>
+    <div class="cursor-glow" id="cursorGlow"></div>
+
     <!-- Navigation -->
     <nav class="navbar">
         <a href="#home" class="nav-item active">Home</a>
@@ -18,52 +19,86 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="main-container">
+    <div class="main-container">
         <h1 class="main-title">waples.me</h1>
         <p class="subtitle">le site marche pas c'est normal</p>
-    </main>
+    </div>
 
     <!-- Music Player -->
     <div class="music-container">
-        <button class="icon-btn music-toggle" id="musicToggle">
-            <span class="icon">♫</span>
+        <button class="music-toggle-btn" id="musicToggleBtn">
+            <div class="mini-visualizer">
+                <div class="mini-bar"></div>
+                <div class="mini-bar"></div>
+                <div class="mini-bar"></div>
+                <div class="mini-bar"></div>
+                <div class="mini-bar"></div>
+            </div>
+            <span>♫</span>
         </button>
-        <div class="player-expanded" id="playerExpanded">
-            <button class="icon-btn play-btn" id="playBtn">▶</button>
-            <div class="track-info">
-                <span class="track-name" id="trackName">YouTube Player</span>
-                <div class="progress-bar" id="progressBar">
-                    <div class="progress-fill"></div>
+
+        <div class="music-player-expanded" id="musicPlayerExpanded">
+            <div class="compact-controls">
+                <button class="control-btn play-pause-btn" id="playBtn">▶</button>
+            </div>
+            <div class="track-info-compact">
+                <div class="track-name" id="trackName">YouTube Player</div>
+                <div class="track-time">
+                    <span id="currentTime">0:00</span>
+                    <div class="progress-mini">
+                        <div class="progress-mini-fill" id="progressFill"></div>
+                    </div>
+                    <span id="duration">0:00</span>
                 </div>
             </div>
             <div class="volume-control">
-                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70">
+                <button class="control-btn volume-btn">🔊</button>
+                <div class="volume-slider" id="volumeSlider">
+                    <div class="volume-fill" id="volumeFill">
+                        <div class="volume-handle"></div>
+                    </div>
+                </div>
             </div>
-            <input type="text" class="youtube-input" id="youtubeInput" placeholder="YouTube ID">
-            <button class="icon-btn load-btn" id="loadBtn">→</button>
+            <div class="youtube-input-container">
+                <input type="text" class="youtube-input" id="youtubeUrl" placeholder="YouTube ID">
+                <button class="youtube-load-btn" id="loadYoutubeBtn">→</button>
+            </div>
         </div>
     </div>
 
     <!-- Social Links -->
     <div class="social-container">
-        <a href="#" class="icon-btn social-btn" data-platform="twitter">𝕏</a>
-        <a href="#" class="icon-btn social-btn" data-platform="discord">◐</a>
-        <a href="#" class="icon-btn social-btn" data-platform="youtube">▶</a>
+        <a href="#" class="social-btn">𝕏</a>
+        <a href="#" class="social-btn">◐</a>
+        <a href="#" class="social-btn">▶</a>
     </div>
 
     <!-- Contact -->
-    <button class="icon-btn contact-toggle" id="contactToggle">✉</button>
-    <form class="contact-form" id="contactForm">
+    <button class="contact-toggle" id="contactToggle">✉</button>
+    <div class="contact-form" id="contactForm">
         <h3>Get in touch</h3>
-        <input type="text" name="name" placeholder="Name" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <textarea name="message" placeholder="Message" rows="4" required></textarea>
-        <button type="submit">Send Message</button>
-    </form>
+        <input type="text" class="form-input" placeholder="Name">
+        <input type="email" class="form-input" placeholder="Email">
+        <textarea class="form-input" placeholder="Message" rows="4"></textarea>
+        <button class="form-submit">Send Message</button>
+    </div>
+
+    <!-- Orb Info Panel -->
+    <div class="orb-info-panel" id="orbInfoPanel">
+        <button class="orb-info-close" id="closeOrbInfo">×</button>
+        <div class="orb-info-header">
+            <img src="" alt="" class="orb-info-avatar" id="orbInfoAvatar">
+            <div class="orb-info-title">
+                <div class="orb-info-name" id="orbInfoName"></div>
+                <div class="orb-info-role" id="orbInfoRole"></div>
+            </div>
+        </div>
+        <div class="orb-info-description" id="orbInfoDescription"></div>
+    </div>
 
     <!-- Hidden YouTube iframe -->
-    <iframe id="youtube-iframe" style="display:none"></iframe>
+    <iframe id="youtube-iframe" style="position:fixed;top:-1000px;opacity:0;pointer-events:none;"></iframe>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
