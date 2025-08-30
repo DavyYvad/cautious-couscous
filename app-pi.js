@@ -10,7 +10,7 @@ const CONFIG = {
     ORB_DISTORTION_RADIUS: 200,
     ORB_DISTORTION_STRENGTH: 1.8,
     MUSIC_INFLUENCE_RADIUS: 500,
-    MUSIC_WAVE_RADIUS: 600,
+    MUSIC_WAVE_RADIUS: 0,
     MUSIC_COLOR_RADIUS: 150,
 };
 
@@ -935,10 +935,10 @@ const initStars = () => {
 const initOrbs = () => {
     state.orbs.push(makeOrb({
         id: 'discord',
-        image: 'https://cdn.discordapp.com/embed/avatars/0.png',
+        image: 'https://cdn.discordapp.com/avatars/1081328094209642668/4b2d28180dabe1e7415b6f9e51486f6a?size=1024',
         name: 'Waples',
-        role: 'Founder',
-        description: 'Pioneering the digital cosmos, one nebula at a time. Building bridges between worlds in the vast network of stars.',
+        role: 'Selpaw',
+        description: 'Un jour je ferai marcher le site mais pas maintenant',
         x: window.innerWidth * 0.25,
         y: window.innerHeight * 0.3
     }));
@@ -946,9 +946,9 @@ const initOrbs = () => {
     state.orbs.push(makeOrb({
         id: 'team1',
         image: 'https://cdn.discordapp.com/embed/avatars/1.png',
-        name: 'Nebula',
-        role: 'Developer',
-        description: 'Crafting stellar experiences in the void. Specializing in quantum computing and interdimensional protocols.',
+        name: "'-'",
+        role: '@-@',
+        description: '...',
         x: window.innerWidth * 0.7,
         y: window.innerHeight * 0.6
     }));
