@@ -1,9 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>waples.network</title>
+    <title>Dashboard Admin - AI Control Center</title>
+
+    <!-- Chart.js pour les graphiques -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         * {
             margin: 0;
@@ -11,1050 +19,2278 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success: linear-gradient(135deg, #13f1fc 0%, #0470dc 100%);
+            --warning: linear-gradient(135deg, #f9d423 0%, #ff4e50 100%);
+            --dark: #1a1a2e;
+            --darker: #0f0f1e;
+            --light: #ffffff;
+            --gray: #8892b0;
+            --border: rgba(255, 255, 255, 0.1);
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-hover: rgba(255, 255, 255, 0.08);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #0f0f1e 25%, #0a0a0a 50%, #151520 75%, #0a0a0a 100%);
-            background-size: 400% 400%;
-            animation: subtleShift 30s ease infinite;
-            color: #ffffff;
-            overflow-x: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 50%, #16213e 100%);
+            color: var(--light);
             min-height: 100vh;
-            cursor: default;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        @keyframes subtleShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        /* Effet de particules en arrière-plan */
+        body::before {
+            content: '';
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="2" cy="2" r="1" fill="white" opacity="0.3"/></svg>');
+            animation: float 20s infinite linear;
+            pointer-events: none;
+            opacity: 0.03;
         }
 
-        /* Canvas de fond */
-        #starfield-canvas {
+        @keyframes float {
+            to {
+                transform: translate(50px, 50px);
+            }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar.collapsed .nav-text {
+            display: none;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+            opacity: 0.1;
+        }
+
+        .nav-item:hover::before {
+            width: 100%;
+        }
+
+        .nav-item:hover {
+            background: var(--glass-hover);
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: var(--glass-hover);
+            border-left: 3px solid #667eea;
+        }
+
+        /* Toggle button */
+        .sidebar-toggle {
+            position: fixed;
+            left: 20px;
+            top: 20px;
+            z-index: 1001;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: var(--light);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.collapsed+.main-content {
+            margin-left: 80px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--glass);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+            width: 300px;
+        }
+
+        .search-bar input {
+            background: none;
+            border: none;
+            color: var(--light);
+            outline: none;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .search-bar input::placeholder {
+            color: var(--gray);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-badge {
+            position: relative;
+        }
+
+        .notification-badge .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            color: var(--gray);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .stat-change.positive {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+
+        .stat-change.negative {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            min-height: 300px;
+        }
+
+        .chart-container {
+            position: relative;
+            /* conseillé par Chart.js */
+            height: 360px;
+            /* hauteur explicite */
+            min-height: unset;
+            /* ← important : retire le min-height */
+            overflow: hidden;
+            /* évite l’apparition de scroll et les reflow */
+        }
+
+        .chart-container canvas {
+            display: block;
+            /* supprime l'espace baseline des inline elements */
+            width: 100% !important;
+            height: 100% !important;
+            /* le canvas suit le conteneur, plus de boucle */
+        }
+
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .chart-options {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chart-option {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+            color: var(--light);
+        }
+
+        .chart-option:hover,
+        .chart-option.active {
+            background: var(--primary);
+            border-color: transparent;
+        }
+
+        /* Players Table */
+        .players-section {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--glass);
+            color: var(--light);
+            border: 1px solid var(--border);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .players-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .players-table th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--gray);
+            font-weight: 500;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .players-table th:hover {
+            color: var(--light);
+        }
+
+        .players-table th.sortable::after {
+            content: '↕';
+            margin-left: 0.5rem;
+            opacity: 0.5;
+        }
+
+        .players-table th.sorted-asc::after {
+            content: '↑';
+            opacity: 1;
+        }
+
+        .players-table th.sorted-desc::after {
+            content: '↓';
+            opacity: 1;
+        }
+
+        .players-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .players-table tr:hover {
+            background: var(--glass-hover);
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .player-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .player-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .status-online {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+
+        .status-offline {
+            background: rgba(107, 114, 128, 0.1);
+            color: #6b7280;
+        }
+
+        .status-idle {
+            background: rgba(251, 191, 36, 0.1);
+            color: #fbbf24;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--glass);
+            color: var(--light);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn:hover {
+            background: var(--glass-hover);
+            transform: scale(1.1);
+        }
+
+        .action-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .pagination-btn {
+            padding: 0.5rem 1rem;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--light);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--glass-hover);
+            transform: translateY(-2px);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: var(--primary);
+            border-color: transparent;
+        }
+
+        .pagination-info {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .fab-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s;
+        }
+
+        .fab-menu.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .fab-menu-item {
+            padding: 0.75rem 1rem;
+            background: var(--darker);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--light);
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .fab-menu-item:hover {
+            background: var(--glass-hover);
+            transform: translateX(-5px);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1;
-        }
-
-        /* Navbar - Style Apple épuré */
-        .navbar {
-            position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            display: flex;
-            gap: 32px;
-            padding: 12px 24px;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(40px) saturate(180%);
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
-            border: 0.5px solid rgba(255, 255, 255, 0.18);
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
-        }
-
-        .nav-item {
-            position: relative;
-            color: rgba(255, 255, 255, 0.65);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 400;
-            letter-spacing: -0.01em;
-            transition: color 0.3s ease;
-        }
-
-        .nav-item:hover {
-            color: rgba(255, 255, 255, 0.95);
-        }
-
-        .nav-item.active {
-            color: #ffffff;
-        }
-
-        /* Conteneur principal */
-        .main-container {
-            position: relative;
-            z-index: 100;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
+            animation: fadeIn 0.3s;
         }
 
-        /* Titre principal - Style minimaliste */
-        .main-title {
-            font-size: clamp(3.5rem, 7vw, 5.5rem);
-            font-weight: 200;
-            letter-spacing: -0.04em;
-            margin-bottom: 0.5rem;
-            text-align: center;
-            opacity: 0;
-            animation: fadeInUp 1.2s ease forwards;
-            animation-delay: 0.3s;
-            background: linear-gradient(135deg, 
-                #9b87f5 0%, 
-                #6E59A5 50%, 
-                #8B7FD6 100%
-            );
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: subtleGradient 10s ease infinite, fadeInUp 1.2s ease forwards;
-        }
-
-        @keyframes subtleGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .subtitle {
-            font-size: 1.125rem;
-            font-weight: 300;
-            color: rgba(255, 255, 255, 0.4);
-            text-align: center;
-            opacity: 0;
-            animation: fadeInUp 1.2s ease forwards;
-            animation-delay: 0.5s;
-            letter-spacing: -0.01em;
-        }
-
-        /* Boutons sociaux - Style épuré */
-        .social-container {
-            position: fixed;
-            bottom: 32px;
-            left: 32px;
-            z-index: 500;
+        .modal.active {
             display: flex;
-            gap: 12px;
         }
 
-        .social-btn {
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 0.5px solid rgba(255, 255, 255, 0.18);
-            border-radius: 12px;
-            color: rgba(255, 255, 255, 0.6);
-            text-decoration: none;
-            font-size: 18px;
-            transition: all 0.3s ease;
-        }
-
-        .social-btn:hover {
-            transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.12);
-            color: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        }
-
-        /* Bouton contact - Style épuré */
-        .contact-toggle {
-            position: fixed;
-            bottom: 32px;
-            right: 32px;
-            z-index: 501;
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 0.5px solid rgba(255, 255, 255, 0.18);
-            color: rgba(255, 255, 255, 0.7);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .contact-toggle:hover {
-            transform: scale(1.05);
-            background: rgba(255, 255, 255, 0.12);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Formulaire de contact - Glassmorphisme Apple */
-        .contact-form {
-            position: fixed;
-            bottom: 100px;
-            right: 32px;
-            z-index: 500;
-            width: 340px;
-            padding: 24px;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(40px) saturate(180%);
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
-            border: 0.5px solid rgba(255, 255, 255, 0.18);
-            border-radius: 20px;
-            opacity: 0;
-            transform: translateY(20px) scale(0.95);
-            pointer-events: none;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-        }
-
-        .contact-form.active {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: all;
-        }
-
-        .contact-form h3 {
-            margin-bottom: 20px;
-            font-weight: 400;
-            font-size: 20px;
-            letter-spacing: -0.02em;
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px 16px;
-            margin-bottom: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 14px;
-            font-family: inherit;
-            transition: all 0.3s ease;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: rgba(155, 135, 245, 0.5);
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .form-input::placeholder {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .form-submit {
-            width: 100%;
-            padding: 12px;
-            background: rgba(155, 135, 245, 0.15);
-            border: 0.5px solid rgba(155, 135, 245, 0.3);
-            border-radius: 10px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 14px;
-            font-weight: 500;
-            letter-spacing: -0.01em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .form-submit:hover {
-            background: rgba(155, 135, 245, 0.25);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(155, 135, 245, 0.2);
-        }
-
-        /* Styles pour les Orbes */
-        .space-orb {
-            position: fixed;
-            width: 80px;
-            height: 80px;
-            z-index: 250;
-            cursor: move;
-            user-select: none;
-            transition: transform 0.1s ease;
-        }
-
-        .space-orb:hover {
-            transform: scale(1.1);
-        }
-
-        .orb-inner {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            border-radius: 50%;
-            overflow: hidden;
-            background: radial-gradient(circle at 30% 30%, 
-                rgba(155, 135, 245, 0.2),
-                rgba(110, 89, 165, 0.1),
-                transparent
-            );
-            box-shadow: 
-                0 0 40px rgba(155, 135, 245, 0.3),
-                inset 0 0 20px rgba(155, 135, 245, 0.2);
-            animation: orbPulse 4s ease-in-out infinite;
-        }
-
-        @keyframes orbPulse {
-            0%, 100% { 
-                transform: scale(1);
-                box-shadow: 
-                    0 0 40px rgba(155, 135, 245, 0.3),
-                    inset 0 0 20px rgba(155, 135, 245, 0.2);
-            }
-            50% { 
-                transform: scale(1.05);
-                box-shadow: 
-                    0 0 60px rgba(155, 135, 245, 0.5),
-                    inset 0 0 30px rgba(155, 135, 245, 0.3);
-            }
-        }
-
-        .orb-image {
-            width: 60%;
-            height: 60%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid rgba(155, 135, 245, 0.3);
-            opacity: 0.9;
-        }
-
-        .orb-ring {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 1px solid rgba(155, 135, 245, 0.2);
-            animation: orbRing 3s linear infinite;
-        }
-
-        @keyframes orbRing {
-            0% {
-                transform: scale(1);
-                opacity: 0.6;
-            }
-            100% {
-                transform: scale(1.5);
-                opacity: 0;
-            }
-        }
-
-        /* Info Panel pour les Orbes */
-        .orb-info-panel {
-            position: fixed;
-            z-index: 600;
-            width: 320px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(40px) saturate(180%);
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
-            border: 0.5px solid rgba(255, 255, 255, 0.18);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-            opacity: 0;
-            transform: scale(0.9) translateY(10px);
-            pointer-events: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .orb-info-panel.active {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-            pointer-events: all;
-        }
-
-        .orb-info-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .orb-info-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            object-fit: cover;
-            border: 1px solid rgba(155, 135, 245, 0.3);
-        }
-
-        .orb-info-title {
-            flex: 1;
-        }
-
-        .orb-info-name {
-            font-size: 16px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.9);
-            letter-spacing: -0.01em;
-        }
-
-        .orb-info-role {
-            font-size: 13px;
-            color: rgba(155, 135, 245, 0.8);
-            margin-top: 2px;
-        }
-
-        .orb-info-description {
-            font-size: 14px;
-            line-height: 1.6;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 16px;
-        }
-
-        .orb-info-close {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: rgba(255, 255, 255, 0.5);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-
-        .orb-info-close:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
             }
         }
 
-        /* Effet de curseur subtil */
-        .cursor-glow {
-            position: fixed;
-            width: 20px;
-            height: 20px;
-            background: radial-gradient(circle, 
-                rgba(155, 135, 245, 0.15),
-                transparent
-            );
+        .modal-content {
+            background: var(--darker);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close-modal {
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            pointer-events: none;
-            transform: translate(-50%, -50%);
-            z-index: 9998;
-            transition: transform 0.1s ease;
+            border: 1px solid var(--border);
+            background: var(--glass);
+            color: var(--light);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .close-modal:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+            color: #ef4444;
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--light);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: var(--glass-hover);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-error {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Code Editor Style */
+        .code-editor {
+            background: #1e1e2e;
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            color: #e1e1e6;
+            border: 1px solid var(--border);
+            min-height: 200px;
+            position: relative;
+        }
+
+        .code-editor::before {
+            content: 'JSON';
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--glass);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+
+        /* Notifications */
+        .notifications-container {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .notification {
+            padding: 1rem 1.5rem;
+            background: var(--darker);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-width: 300px;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            animation: slideInRight 0.3s forwards;
+        }
+
+        @keyframes slideInRight {
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .notification.removing {
+            animation: slideOutRight 0.3s forwards;
+        }
+
+        @keyframes slideOutRight {
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .notification.success {
+            border-color: #22c55e;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+        }
+
+        .notification.error {
+            border-color: #ef4444;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+        }
+
+        .notification.warning {
+            border-color: #fbbf24;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05));
+        }
+
+        .notification.info {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+        }
+
+        /* Filters */
+        .filters-panel {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .filters-panel.active {
+            display: block;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
         }
 
         /* Responsive */
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
-            .navbar {
-                padding: 10px 20px;
-                gap: 20px;
-            }
-            
-            .contact-form {
-                width: calc(100vw - 64px);
-                right: 32px;
-                left: 32px;
-            }
-            
-            .social-container {
-                gap: 8px;
+            .sidebar-toggle {
+                display: flex;
             }
 
-            .orb-info-panel {
-                width: calc(100vw - 64px);
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+                padding-top: 70px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .search-bar {
+                width: 100%;
+            }
+
+            .table-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .players-table {
+                font-size: 0.85rem;
+            }
+
+            .players-table th,
+            .players-table td {
+                padding: 0.5rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--glass) 25%, var(--glass-hover) 50%, var(--glass) 75%);
+            background-size: 200% 100%;
+            animation: skeleton 1.5s ease-in-out infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes skeleton {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
             }
         }
     </style>
 </head>
+
 <body>
-    <canvas id="starfield-canvas"></canvas>
-    
-    <!-- Curseur glow -->
-    <div class="cursor-glow" id="cursorGlow"></div>
-    
-    <!-- Navbar -->
-    <nav class="navbar">
-        <a href="#home" class="nav-item active">Home</a>
-        <a href="#about" class="nav-item">About</a>
-        <a href="#projects" class="nav-item">Projects</a>
-        <a href="#contact" class="nav-item">Contact</a>
-    </nav>
-
-    <!-- Container principal -->
-    <div class="main-container">
-        <h1 class="main-title">waples.network</h1>
-        <p class="subtitle">Navigate through the cosmos</p>
-    </div>
-
-    <!-- Boutons sociaux -->
-    <div class="social-container">
-        <a href="#" class="social-btn">
-            <span>𝕏</span>
-        </a>
-        <a href="#" class="social-btn">
-            <span>◐</span>
-        </a>
-        <a href="#" class="social-btn">
-            <span>▶</span>
-        </a>
-    </div>
-
-    <!-- Bouton contact -->
-    <button class="contact-toggle" onclick="toggleContact()">
-        ✉
+    <!-- Toggle Button for Mobile -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Formulaire de contact -->
-    <div class="contact-form" id="contactForm">
-        <h3>Get in touch</h3>
-        <input type="text" class="form-input" placeholder="Name">
-        <input type="email" class="form-input" placeholder="Email">
-        <textarea class="form-input" placeholder="Message" rows="4"></textarea>
-        <button class="form-submit">Send Message</button>
-    </div>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo">
+            <i class="fas fa-robot"></i>
+            <span class="nav-text">AI Control</span>
+        </div>
 
-    <!-- Panel d'info des orbes -->
-    <div class="orb-info-panel" id="orbInfoPanel">
-        <button class="orb-info-close" onclick="closeOrbInfo()">×</button>
-        <div class="orb-info-header">
-            <img src="" alt="" class="orb-info-avatar" id="orbInfoAvatar">
-            <div class="orb-info-title">
-                <div class="orb-info-name" id="orbInfoName"></div>
-                <div class="orb-info-role" id="orbInfoRole"></div>
+        <nav id="sidebarNav">
+            <!-- Navigation items will be generated by JavaScript -->
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="globalSearch" placeholder="Rechercher un joueur, une commande...">
+            </div>
+
+            <div class="user-info">
+                <div class="notification-badge">
+                    <button class="btn btn-secondary" id="notificationBtn">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <span class="badge" id="notificationCount">0</span>
+                </div>
+                <div class="avatar" id="userAvatar">AD</div>
+                <div>
+                    <div style="font-weight: 600;" id="userName">Admin</div>
+                    <div style="font-size: 0.85rem; color: var(--gray);" id="userRole">Super Admin</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be generated by JavaScript -->
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Playtime par jour</h3>
+                    <div class="chart-options" id="playtimeChartOptions">
+                        <button class="chart-option active" data-range="7">7J</button>
+                        <button class="chart-option" data-range="30">30J</button>
+                        <button class="chart-option" data-range="90">3M</button>
+                    </div>
+                </div>
+                <canvas id="playtimeChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Répartition des rangs</h3>
+                </div>
+                <canvas id="rankChart"></canvas>
             </div>
         </div>
-        <div class="orb-info-description" id="orbInfoDescription"></div>
+
+        <!-- Filters Panel -->
+        <div class="filters-panel" id="filtersPanel">
+            <div class="filters-grid">
+                <div class="form-group">
+                    <label class="form-label">Statut</label>
+                    <select class="form-select" id="filterStatus">
+                        <option value="">Tous</option>
+                        <option value="online">En ligne</option>
+                        <option value="idle">Inactif</option>
+                        <option value="offline">Hors ligne</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Rang</label>
+                    <select class="form-select" id="filterRank">
+                        <option value="">Tous</option>
+                        <option value="Joueur">Joueur</option>
+                        <option value="VIP">VIP</option>
+                        <option value="VIP+">VIP+</option>
+                        <option value="Modérateur">Modérateur</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Money min</label>
+                    <input type="number" class="form-input" id="filterMoneyMin" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Money max</label>
+                    <input type="number" class="form-input" id="filterMoneyMax" placeholder="999999">
+                </div>
+            </div>
+        </div>
+
+        <!-- Players Table -->
+        <div class="players-section">
+            <div class="table-header">
+                <h3 style="font-size: 1.3rem; font-weight: 600;">Gestion des joueurs</h3>
+                <div class="table-actions">
+                    <button class="btn btn-secondary" id="toggleFilters">
+                        <i class="fas fa-filter"></i>
+                        Filtrer
+                    </button>
+                    <button class="btn btn-secondary" id="exportData">
+                        <i class="fas fa-download"></i>
+                        Exporter
+                    </button>
+                    <button class="btn btn-primary" id="addPlayerBtn">
+                        <i class="fas fa-plus"></i>
+                        Ajouter
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="players-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="name">Joueur</th>
+                            <th class="sortable" data-sort="status">Statut</th>
+                            <th class="sortable" data-sort="playtime">Playtime</th>
+                            <th class="sortable" data-sort="money">Money</th>
+                            <th class="sortable" data-sort="rank">Rang</th>
+                            <th class="sortable" data-sort="lastSeen">Dernière connexion</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playersTableBody">
+                        <!-- Players will be rendered here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination">
+                <!-- Pagination will be rendered here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Quick Actions FAB -->
+    <div class="quick-actions">
+        <div class="fab-menu" id="fabMenu">
+            <div class="fab-menu-item" data-action="broadcast">
+                <i class="fas fa-bullhorn"></i> Broadcast
+            </div>
+            <div class="fab-menu-item" data-action="restart">
+                <i class="fas fa-sync"></i> Redémarrer serveur
+            </div>
+            <div class="fab-menu-item" data-action="backup">
+                <i class="fas fa-save"></i> Backup
+            </div>
+        </div>
+        <button class="fab" id="fabButton">
+            <i class="fas fa-plus"></i>
+        </button>
     </div>
 
+    <!-- Player Modal -->
+    <div class="modal" id="playerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Éditer le joueur</h2>
+                <button class="close-modal" data-modal="playerModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="playerForm">
+                <div class="form-group">
+                    <label class="form-label">Nom du joueur</label>
+                    <input type="text" class="form-input" id="playerName" required>
+                    <span class="form-error" id="playerNameError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Money</label>
+                    <input type="number" class="form-input" id="playerMoney" min="0" required>
+                    <span class="form-error" id="playerMoneyError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Rang</label>
+                    <select class="form-select" id="playerRank" required>
+                        <option value="Joueur">Joueur</option>
+                        <option value="VIP">VIP</option>
+                        <option value="VIP+">VIP+</option>
+                        <option value="Modérateur">Modérateur</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Statut</label>
+                    <select class="form-select" id="playerStatus">
+                        <option value="online">En ligne</option>
+                        <option value="idle">Inactif</option>
+                        <option value="offline">Hors ligne</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Données personnalisées (JSON)</label>
+                    <textarea class="code-editor" id="playerData" rows="8">{}</textarea>
+                    <span class="form-error" id="playerDataError"></span>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" data-modal="playerModal">
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Sauvegarder
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notifications Container -->
+    <div class="notifications-container" id="notificationsContainer"></div>
+
     <script>
-        // Configuration
-        const CONFIG = {
-            STAR_DENSITY: 3000,
-            SHOOTING_STAR_CHANCE: 0.008,
-            MOUSE_INFLUENCE_RADIUS: 200,
-            CONSTELLATION_DISTANCE: 70,
-            ORB_PULSE_RADIUS: 150
+        // ========================================
+        // Architecture Fonctionnelle avec Factory Pattern
+        // ========================================
+
+        // Store Pattern pour la gestion d'état
+        const createStore = (initialState = {}) => {
+            let state = initialState;
+            const listeners = new Set();
+
+            return {
+                getState: () => ({ ...state }),
+                setState: (updates) => {
+                    state = { ...state, ...updates };
+                    listeners.forEach(listener => listener(state));
+                },
+                subscribe: (listener) => {
+                    listeners.add(listener);
+                    return () => listeners.delete(listener);
+                },
+                dispatch: (action, payload) => {
+                    const actions = {
+                        UPDATE_PLAYERS: () => state.players = payload,
+                        UPDATE_STATS: () => state.stats = payload,
+                        SET_FILTER: () => state.filters = { ...state.filters, ...payload },
+                        SET_SORT: () => state.sort = payload,
+                        SET_PAGE: () => state.currentPage = payload,
+                    };
+                    actions[action]?.();
+                    listeners.forEach(listener => listener(state));
+                }
+            };
         };
 
-        // Canvas et contexte
-        const canvas = document.getElementById('starfield-canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Variables globales
-        let stars = [];
-        let shootingStars = [];
-        let nebulae = [];
-        let orbs = [];
-        let mousePosition = { x: 0, y: 0 };
-        let animationId = null;
-        let currentOpenOrb = null; // Variable pour suivre l'orbe actuellement ouvert
-        
-        // Configuration du canvas
-        function initCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        
-        // Classe Star simplifiée (modifiée pour interaction avec orbes)
-        class Star {
-            constructor(x, y, size, speed) {
-                this.x = x;
-                this.y = y;
-                this.baseX = x;
-                this.baseY = y;
-                this.size = size;
-                this.speed = speed;
-                this.brightness = Math.random() * 0.5 + 0.5;
-                this.twinkleSpeed = Math.random() * 0.015 + 0.005;
-                this.orbInfluence = 0;
-            }
-            
-            update() {
-                // Animation de scintillement
-                this.brightness += this.twinkleSpeed;
-                if (this.brightness > 1 || this.brightness < 0.2) {
-                    this.twinkleSpeed = -this.twinkleSpeed;
-                }
-                
-                // Réinitialiser l'influence des orbes
-                this.orbInfluence = 0;
-                
-                // Influence des orbes
-                orbs.forEach(orb => {
-                    const deltaX = orb.x - this.x;
-                    const deltaY = orb.y - this.y;
-                    const distance = Math.hypot(deltaX, deltaY);
-                    
-                    if (distance < CONFIG.ORB_PULSE_RADIUS) {
-                        const influence = (CONFIG.ORB_PULSE_RADIUS - distance) / CONFIG.ORB_PULSE_RADIUS;
-                        this.orbInfluence = Math.max(this.orbInfluence, influence * orb.pulseIntensity);
-                    }
-                });
-                
-                // Interaction avec la souris
-                const deltaX = mousePosition.x - this.x;
-                const deltaY = mousePosition.y - this.y;
-                const distance = Math.hypot(deltaX, deltaY);
-                
-                if (distance < CONFIG.MOUSE_INFLUENCE_RADIUS) {
-                    const force = (CONFIG.MOUSE_INFLUENCE_RADIUS - distance) / CONFIG.MOUSE_INFLUENCE_RADIUS;
-                    this.x += (deltaX * force) * 0.02;
-                    this.y += (deltaY * force) * 0.02;
-                } else {
-                    // Retour à la position de base
-                    this.x += (this.baseX - this.x) * 0.05;
-                    this.y += (this.baseY - this.y) * 0.05;
-                }
-                
-                // Dérive subtile
-                const time = Date.now() * 0.00005 * this.speed;
-                this.baseX += Math.sin(time) * 0.03;
-                this.baseY += Math.cos(time) * 0.015;
-            }
-            
-            render() {
-                ctx.save();
-                const totalBrightness = this.brightness * (1 + this.orbInfluence * 0.5);
-                ctx.globalAlpha = Math.min(totalBrightness * 0.8, 1);
-                
-                // Halo subtil (plus brillant si influencé par orbe)
-                const gradient = ctx.createRadialGradient(
-                    this.x, this.y, 0,
-                    this.x, this.y, this.size * 3 * (1 + this.orbInfluence)
-                );
-                
-                if (this.orbInfluence > 0) {
-                    gradient.addColorStop(0, `rgba(155, 135, 245, ${0.6 + this.orbInfluence * 0.3})`);
-                    gradient.addColorStop(0.4, `rgba(110, 95, 200, ${0.2 + this.orbInfluence * 0.2})`);
-                } else {
-                    gradient.addColorStop(0, 'rgba(155, 135, 245, 0.6)');
-                    gradient.addColorStop(0.4, 'rgba(110, 95, 200, 0.2)');
-                }
-                gradient.addColorStop(1, 'transparent');
-                
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size * 3 * (1 + this.orbInfluence * 0.5), 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Noyau de l'étoile
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size * (1 + this.orbInfluence * 0.3), 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.restore();
-            }
-        }
+        // Factory pour créer des joueurs
+        const playerFactory = ({
+            id = Date.now(),
+            name = '',
+            status = 'offline',
+            playtime = 0,
+            money = 0,
+            rank = 'Joueur',
+            lastSeen = new Date(),
+            avatar = '',
+            data = {}
+        } = {}) => ({
+            id,
+            name,
+            status,
+            playtime,
+            money,
+            rank,
+            lastSeen,
+            avatar: avatar || name.substring(0, 2).toUpperCase(),
+            data,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
 
-        // Classe Orb pour les orbes spatiales
-        class Orb {
-            constructor(config) {
-                this.id = config.id;
-                this.x = config.x || Math.random() * (window.innerWidth - 200) + 100;
-                this.y = config.y || Math.random() * (window.innerHeight - 200) + 100;
-                this.image = config.image;
-                this.name = config.name;
-                this.role = config.role;
-                this.description = config.description;
-                this.pulseIntensity = 0;
-                this.pulseDirection = 1;
-                this.element = null;
-                this.isDragging = false;
-                this.dragOffset = { x: 0, y: 0 };
-                this.hasMoved = false;
-                
-                this.createElement();
-            }
-            
-            createElement() {
-                const orbDiv = document.createElement('div');
-                orbDiv.className = 'space-orb';
-                orbDiv.style.left = `${this.x - 40}px`;
-                orbDiv.style.top = `${this.y - 40}px`;
-                orbDiv.innerHTML = `
-                    <div class="orb-inner">
-                        <div class="orb-ring"></div>
-                        <img src="${this.image}" alt="${this.name}" class="orb-image" draggable="false">
-                    </div>
+        // Factory pour les notifications
+        const notificationFactory = (message, type = 'info', duration = 3000) => ({
+            id: Date.now(),
+            message,
+            type,
+            duration,
+            timestamp: new Date()
+        });
+
+        // Service de données avec localStorage
+        const dataService = (() => {
+            const STORAGE_KEY = 'ai_control_dashboard';
+
+            const save = (data) => {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                    return true;
+                } catch (error) {
+                    console.error('Erreur de sauvegarde:', error);
+                    return false;
+                }
+            };
+
+            const load = () => {
+                try {
+                    const data = localStorage.getItem(STORAGE_KEY);
+                    return data ? JSON.parse(data) : null;
+                } catch (error) {
+                    console.error('Erreur de chargement:', error);
+                    return null;
+                }
+            };
+
+            const clear = () => {
+                localStorage.removeItem(STORAGE_KEY);
+            };
+
+            return { save, load, clear };
+        })();
+
+        // Gestionnaire de graphiques
+        const chartManager = (() => {
+            let charts = {};
+
+            const createChart = (id, config) => {
+                const ctx = document.getElementById(id)?.getContext('2d');
+                if (!ctx) return null;
+
+                if (charts[id]) {
+                    charts[id].destroy();
+                }
+
+                charts[id] = new Chart(ctx, config);
+                return charts[id];
+            };
+
+            const updateChart = (id, data) => {
+                if (charts[id]) {
+                    charts[id].data = data;
+                    charts[id].update();
+                }
+            };
+
+            const destroyChart = (id) => {
+                if (charts[id]) {
+                    charts[id].destroy();
+                    delete charts[id];
+                }
+            };
+
+            return { createChart, updateChart, destroyChart };
+        })();
+
+        // Gestionnaire de notifications
+        const notificationManager = (() => {
+            const container = document.getElementById('notificationsContainer');
+            const notifications = new Map();
+
+            const show = (message, type = 'info', duration = 3000) => {
+                const notification = notificationFactory(message, type, duration);
+
+                const element = document.createElement('div');
+                element.className = `notification ${type}`;
+                element.innerHTML = `
+                    <i class="fas fa-${getIcon(type)}"></i>
+                    <span>${message}</span>
                 `;
-                
-                // Event listeners pour drag and drop
-                orbDiv.addEventListener('mousedown', (e) => this.startDrag(e));
-                orbDiv.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Empêche la propagation du clic
-                    if (!this.hasMoved) {
-                        this.toggleInfo();
+
+                container.appendChild(element);
+                notifications.set(notification.id, element);
+
+                setTimeout(() => {
+                    element.classList.add('removing');
+                    setTimeout(() => {
+                        container.removeChild(element);
+                        notifications.delete(notification.id);
+                    }, 300);
+                }, duration);
+
+                return notification.id;
+            };
+
+            const getIcon = (type) => {
+                const icons = {
+                    success: 'check-circle',
+                    error: 'exclamation-circle',
+                    warning: 'exclamation-triangle',
+                    info: 'info-circle'
+                };
+                return icons[type] || icons.info;
+            };
+
+            return { show };
+        })();
+
+        // Utilitaires
+        const utils = {
+            debounce: (func, wait) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            },
+
+            throttle: (func, limit) => {
+                let inThrottle;
+                return (...args) => {
+                    if (!inThrottle) {
+                        func.apply(this, args);
+                        inThrottle = true;
+                        setTimeout(() => inThrottle = false, limit);
+                    }
+                };
+            },
+
+            formatMoney: (amount) => {
+                return new Intl.NumberFormat('fr-FR', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 0
+                }).format(amount);
+            },
+
+            formatPlaytime: (hours) => {
+                if (hours < 1) return `${Math.round(hours * 60)}min`;
+                if (hours < 24) return `${Math.round(hours)}h`;
+                return `${Math.round(hours / 24)}j ${Math.round(hours % 24)}h`;
+            },
+
+            formatDate: (date) => {
+                const now = new Date();
+                const diff = now - new Date(date);
+                const minutes = Math.floor(diff / 60000);
+                const hours = Math.floor(minutes / 60);
+                const days = Math.floor(hours / 24);
+
+                if (minutes < 1) return 'À l\'instant';
+                if (minutes < 60) return `Il y a ${minutes}min`;
+                if (hours < 24) return `Il y a ${hours}h`;
+                if (days < 7) return `Il y a ${days}j`;
+                return new Date(date).toLocaleDateString('fr-FR');
+            },
+
+            exportToCSV: (data, filename) => {
+                const csv = [
+                    Object.keys(data[0]).join(','),
+                    ...data.map(row => Object.values(row).join(','))
+                ].join('\n');
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+
+            validateJSON: (str) => {
+                try {
+                    JSON.parse(str);
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+        };
+
+        // ========================================
+        // Application principale
+        // ========================================
+
+        const App = (() => {
+            // État global
+            const store = createStore({
+                players: [],
+                stats: {
+                    online: 0,
+                    avgPlaytime: 0,
+                    totalMoney: 0,
+                    activeServers: 0
+                },
+                filters: {
+                    status: '',
+                    rank: '',
+                    moneyMin: 0,
+                    moneyMax: 999999,
+                    search: ''
+                },
+                sort: {
+                    field: 'name',
+                    direction: 'asc'
+                },
+                currentPage: 1,
+                itemsPerPage: 10,
+                currentEditingPlayer: null
+            });
+
+            // Données initiales
+            const generateInitialData = () => {
+                const names = [
+                    'NoobMaster69', 'xX_Shadow_Xx', 'CraftKing', 'ProGamer2024',
+                    'ElitePlayer', 'NinjaWarrior', 'DragonSlayer', 'PhoenixRise',
+                    'ThunderBolt', 'IceQueen', 'FireStorm', 'DarkKnight',
+                    'GoldenEagle', 'SilverWolf', 'CrimsonBlade', 'MysticMage'
+                ];
+
+                const statuses = ['online', 'online', 'online', 'idle', 'idle', 'offline'];
+                const ranks = ['Joueur', 'Joueur', 'Joueur', 'VIP', 'VIP', 'VIP+', 'Modérateur', 'Admin'];
+
+                return names.map((name, index) => playerFactory({
+                    id: Date.now() + index,
+                    name,
+                    status: statuses[Math.floor(Math.random() * statuses.length)],
+                    playtime: Math.floor(Math.random() * 500),
+                    money: Math.floor(Math.random() * 100000),
+                    rank: ranks[Math.floor(Math.random() * ranks.length)],
+                    lastSeen: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+                    data: {
+                        level: Math.floor(Math.random() * 100),
+                        kills: Math.floor(Math.random() * 1000),
+                        deaths: Math.floor(Math.random() * 500),
+                        achievements: []
+                    }
+                }));
+            };
+
+            // Initialisation
+            const init = () => {
+                // Charger les données sauvegardées ou générer de nouvelles données
+                const savedData = dataService.load();
+                const players = savedData?.players || generateInitialData();
+
+                store.dispatch('UPDATE_PLAYERS', players);
+                updateStats();
+
+                // Initialiser les composants UI
+                initNavigation();
+                initEventListeners();
+                initCharts();
+                renderAll();
+
+                // Auto-save
+                store.subscribe(utils.debounce((state) => {
+                    dataService.save({ players: state.players });
+                }, 1000));
+
+                // Simulation de mises à jour en temps réel
+                startRealtimeSimulation();
+            };
+
+            const initNavigation = () => {
+                const navItems = [
+                    { icon: 'fa-home', label: 'Dashboard', active: true },
+                    { icon: 'fa-users', label: 'Joueurs' },
+                    { icon: 'fa-chart-line', label: 'Analytics' },
+                    { icon: 'fa-server', label: 'Serveurs' },
+                    { icon: 'fa-coins', label: 'Économie' },
+                    { icon: 'fa-shield-alt', label: 'Sécurité' },
+                    { icon: 'fa-cog', label: 'Paramètres' }
+                ];
+
+                const nav = document.getElementById('sidebarNav');
+                nav.innerHTML = navItems.map(item => `
+                    <div class="nav-item ${item.active ? 'active' : ''}" data-page="${item.label}">
+                        <i class="fas ${item.icon}"></i>
+                        <span class="nav-text">${item.label}</span>
+                    </div>
+                `).join('');
+
+                nav.addEventListener('click', (e) => {
+                    const navItem = e.target.closest('.nav-item');
+                    if (navItem) {
+                        document.querySelectorAll('.nav-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        navItem.classList.add('active');
+                        notificationManager.show(`Navigation vers ${navItem.dataset.page}`, 'info');
                     }
                 });
-                
-                document.body.appendChild(orbDiv);
-                this.element = orbDiv;
-            }
-            
-            startDrag(e) {
-                e.stopPropagation();
-                this.hasMoved = false;
-                const startX = e.clientX;
-                const startY = e.clientY;
-                this.dragOffset.x = startX - this.x;
-                this.dragOffset.y = startY - this.y;
-                
-                const mouseMoveHandler = (e) => {
-                    const deltaX = Math.abs(e.clientX - startX);
-                    const deltaY = Math.abs(e.clientY - startY);
-                    
-                    if (deltaX > 5 || deltaY > 5) {
-                        this.hasMoved = true;
-                        // Ferme le panel si on commence à draguer
-                        if (currentOpenOrb === this) {
-                            closeOrbInfo();
+            };
+
+            const initEventListeners = () => {
+                // Sidebar toggle
+                document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.toggle('active');
+                });
+
+                // Search
+                document.getElementById('globalSearch')?.addEventListener('input', utils.debounce((e) => {
+                    store.setState({ filters: { ...store.getState().filters, search: e.target.value } });
+                    renderPlayersTable();
+                }, 300));
+
+                // Filters
+                document.getElementById('toggleFilters')?.addEventListener('click', () => {
+                    document.getElementById('filtersPanel').classList.toggle('active');
+                });
+
+                const FILTER_MAP = {
+                    filterStatus: 'status',
+                    filterRank: 'rank',
+                    filterMoneyMin: 'moneyMin',
+                    filterMoneyMax: 'moneyMax',
+                };
+
+                ['filterStatus', 'filterRank', 'filterMoneyMin', 'filterMoneyMax'].forEach(id => {
+                    document.getElementById(id)?.addEventListener('change', (e) => {
+                        const filters = { ...store.getState().filters, [FILTER_MAP[id]]: e.target.value };
+                        store.setState({ filters });
+                        renderPlayersTable();
+                    });
+                });
+
+                // Sort
+                document.querySelectorAll('.sortable').forEach(th => {
+                    th.addEventListener('click', () => {
+                        const field = th.dataset.sort;
+                        const currentSort = store.getState().sort;
+                        const direction = currentSort.field === field && currentSort.direction === 'asc' ? 'desc' : 'asc';
+
+                        store.dispatch('SET_SORT', { field, direction });
+
+                        // Update UI
+                        document.querySelectorAll('.sortable').forEach(el => {
+                            el.classList.remove('sorted-asc', 'sorted-desc');
+                        });
+                        th.classList.add(`sorted-${direction}`);
+
+                        renderPlayersTable();
+                    });
+                });
+
+                // Add player
+                document.getElementById('addPlayerBtn')?.addEventListener('click', () => {
+                    store.setState({ currentEditingPlayer: null });
+                    openPlayerModal();
+                });
+
+                // Player form
+                document.getElementById('playerForm')?.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    savePlayer();
+                });
+
+                // Export data
+                document.getElementById('exportData')?.addEventListener('click', () => {
+                    const players = store.getState().players;
+                    const exportData = players.map(p => ({
+                        nom: p.name,
+                        statut: p.status,
+                        playtime: p.playtime,
+                        money: p.money,
+                        rang: p.rank,
+                        derniere_connexion: p.lastSeen
+                    }));
+                    utils.exportToCSV(exportData, `players_${Date.now()}.csv`);
+                    notificationManager.show('Données exportées avec succès', 'success');
+                });
+
+                // Modal close buttons
+                document.querySelectorAll('[data-modal]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        closeModal(btn.dataset.modal);
+                    });
+                });
+
+                // FAB menu
+                const fabButton = document.getElementById('fabButton');
+                const fabMenu = document.getElementById('fabMenu');
+
+                fabButton?.addEventListener('click', () => {
+                    fabMenu.classList.toggle('active');
+                    fabButton.querySelector('i').className = fabMenu.classList.contains('active')
+                        ? 'fas fa-times'
+                        : 'fas fa-plus';
+                });
+
+                document.querySelectorAll('.fab-menu-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const action = item.dataset.action;
+                        handleQuickAction(action);
+                        fabMenu.classList.remove('active');
+                        fabButton.querySelector('i').className = 'fas fa-plus';
+                    });
+                });
+
+                // Chart options
+                document.querySelectorAll('#playtimeChartOptions .chart-option').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('#playtimeChartOptions .chart-option').forEach(b => {
+                            b.classList.remove('active');
+                        });
+                        btn.classList.add('active');
+                        updatePlaytimeChart(parseInt(btn.dataset.range));
+                    });
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    // Ctrl/Cmd + K for search
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                        e.preventDefault();
+                        document.getElementById('globalSearch')?.focus();
+                    }
+
+                    // Escape to close modals
+                    if (e.key === 'Escape') {
+                        document.querySelectorAll('.modal.active').forEach(modal => {
+                            closeModal(modal.id);
+                        });
+                    }
+
+                    // Ctrl/Cmd + N for new player
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                        e.preventDefault();
+                        document.getElementById('addPlayerBtn')?.click();
+                    }
+                });
+            };
+
+            const initCharts = () => {
+                // Playtime chart
+                const playtimeConfig = {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Heures jouées',
+                            data: [],
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#8892b0' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#8892b0' }
+                            }
                         }
                     }
-                    
-                    this.x = e.clientX - this.dragOffset.x;
-                    this.y = e.clientY - this.dragOffset.y;
-                    this.element.style.left = `${this.x - 40}px`;
-                    this.element.style.top = `${this.y - 40}px`;
                 };
-                
-                const mouseUpHandler = () => {
-                    document.removeEventListener('mousemove', mouseMoveHandler);
-                    document.removeEventListener('mouseup', mouseUpHandler);
-                };
-                
-                document.addEventListener('mousemove', mouseMoveHandler);
-                document.addEventListener('mouseup', mouseUpHandler);
-            }
-            
-            toggleInfo() {
-                // Si c'est déjà ouvert pour cette orbe, fermer
-                if (currentOpenOrb === this) {
-                    closeOrbInfo();
-                } else {
-                    // Sinon, ouvrir pour cette orbe
-                    this.showInfo();
-                }
-            }
-            
-            showInfo() {
-                const panel = document.getElementById('orbInfoPanel');
-                const avatar = document.getElementById('orbInfoAvatar');
-                const name = document.getElementById('orbInfoName');
-                const role = document.getElementById('orbInfoRole');
-                const description = document.getElementById('orbInfoDescription');
-                
-                avatar.src = this.image;
-                name.textContent = this.name;
-                role.textContent = this.role;
-                description.textContent = this.description;
-                
-                // Positionner le panel près de l'orbe
-                const panelWidth = 320;
-                let panelX = this.x + 60;
-                let panelY = this.y - 50;
-                
-                // Ajuster si dépasse de l'écran
-                if (panelX + panelWidth > window.innerWidth - 32) {
-                    panelX = this.x - panelWidth - 60;
-                }
-                if (panelY < 32) {
-                    panelY = 32;
-                }
-                
-                panel.style.left = `${panelX}px`;
-                panel.style.top = `${panelY}px`;
-                panel.classList.add('active');
-                
-                // Mettre à jour l'orbe actuellement ouverte
-                currentOpenOrb = this;
-            }
-            
-            update() {
-                // Animation du pulse
-                this.pulseIntensity += 0.02 * this.pulseDirection;
-                if (this.pulseIntensity >= 1 || this.pulseIntensity <= 0) {
-                    this.pulseDirection *= -1;
-                }
-            }
-        }
-        
-        // Fonction pour fermer le panel d'info
-        function closeOrbInfo() {
-            const panel = document.getElementById('orbInfoPanel');
-            panel.classList.remove('active');
-            currentOpenOrb = null;
-        }
-        
-        // Classe Nebula ajustée (couleurs plus sombres)
-        class Nebula {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.radius = Math.random() * 150 + 80;
-                this.opacity = Math.random() * 0.015 + 0.005;
-                this.hue = Math.random() * 40 + 250; // Bleu-violet plus profond
-            }
-            
-            render() {
-                ctx.save();
-                const gradient = ctx.createRadialGradient(
-                    this.x, this.y, 0,
-                    this.x, this.y, this.radius
-                );
-                gradient.addColorStop(0, `hsla(${this.hue}, 60%, 35%, ${this.opacity})`);
-                gradient.addColorStop(0.5, `hsla(${this.hue}, 50%, 25%, ${this.opacity * 0.5})`);
-                gradient.addColorStop(1, 'transparent');
-                
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-        
-        // Classe ShootingStar fournie par l'utilisateur
-        class ShootingStar {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = 0;
-                this.velocity = Math.random() * 10 + 5;
-                this.length = Math.random() * 80 + 20;
-                this.opacity = 1;
-                this.decayRate = 0.01;
-            }
-            
-            update() {
-                this.x -= this.velocity;
-                this.y += this.velocity * 0.5;
-                this.opacity -= this.decayRate;
-                return this.opacity > 0;
-            }
-            
-            render() {
-                ctx.save();
-                ctx.globalAlpha = this.opacity;
-                
-                const gradient = ctx.createLinearGradient(
-                    this.x, this.y,
-                    this.x + this.length, this.y - this.length * 0.5
-                );
-                gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
-                gradient.addColorStop(1, 'rgba(255, 255, 255, 1)');
-                
-                ctx.strokeStyle = gradient;
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(this.x, this.y);
-                ctx.lineTo(this.x + this.length, this.y - this.length * 0.5);
-                ctx.stroke();
-                
-                ctx.restore();
-            }
-        }
-        
-        // Initialisation des éléments
-        function initStars() {
-            stars = [];
-            nebulae = [];
-            const starCount = Math.floor((canvas.width * canvas.height) / CONFIG.STAR_DENSITY);
-            
-            // Création des nébuleuses
-            for (let i = 0; i < 4; i++) {
-                nebulae.push(new Nebula());
-            }
-            
-            // Création des étoiles
-            for (let i = 0; i < starCount; i++) {
-                stars.push(new Star(
-                    Math.random() * canvas.width,
-                    Math.random() * canvas.height,
-                    Math.random() * 1.2 + 0.3,
-                    Math.random() * 2 + 1
-                ));
-            }
-        }
 
-        // Initialisation des orbes
-        function initOrbs() {
-            // Exemple d'orbes - remplacez avec vos propres données
-            orbs.push(new Orb({
-                id: 'discord',
-                image: 'http://cdn.discordapp.com/avatars/1081328094209642668/4b2d28180dabe1e7415b6f9e51486f6a?size=1024', // Remplacez avec votre image
-                name: 'Waples',
-                role: 'Founder',
-                description: 'Pioneering the digital cosmos, one nebula at a time. Building bridges between worlds in the vast network of stars.',
-                x: window.innerWidth * 0.25,
-                y: window.innerHeight * 0.3
-            }));
-            
-            orbs.push(new Orb({
-                id: 'team1',
-                image: 'https://cdn.discordapp.com/embed/avatars/1.png', // Remplacez avec votre image
-                name: 'Nebula',
-                role: 'Developer',
-                description: 'Crafting stellar experiences in the void. Specializing in quantum computing and interdimensional protocols.',
-                x: window.innerWidth * 0.7,
-                y: window.innerHeight * 0.6
-            }));
-        }
-        
-        // Connexion des étoiles proches
-        function renderConstellations() {
-            const nearbyStars = [];
-            
-            stars.forEach(star => {
-                const distToMouse = Math.hypot(star.x - mousePosition.x, star.y - mousePosition.y);
-                if (distToMouse < CONFIG.MOUSE_INFLUENCE_RADIUS * 1.5) {
-                    nearbyStars.push(star);
-                }
-            });
-            
-            for (let i = 0; i < nearbyStars.length; i++) {
-                for (let j = i + 1; j < nearbyStars.length; j++) {
-                    const deltaX = nearbyStars[i].x - nearbyStars[j].x;
-                    const deltaY = nearbyStars[i].y - nearbyStars[j].y;
-                    const distance = Math.hypot(deltaX, deltaY);
-                    
-                    if (distance < CONFIG.CONSTELLATION_DISTANCE) {
-                        ctx.save();
-                        const opacity = (1 - distance / CONFIG.CONSTELLATION_DISTANCE) * 0.2 * nearbyStars[i].brightness;
-                        ctx.strokeStyle = `rgba(155, 135, 245, ${opacity})`;
-                        ctx.lineWidth = 0.5;
-                        ctx.beginPath();
-                        ctx.moveTo(nearbyStars[i].x, nearbyStars[i].y);
-                        ctx.lineTo(nearbyStars[j].x, nearbyStars[j].y);
-                        ctx.stroke();
-                        ctx.restore();
+                chartManager.createChart('playtimeChart', playtimeConfig);
+                updatePlaytimeChart(7);
+
+                // Rank distribution chart
+                const rankConfig = {
+                    type: 'doughnut',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            data: [],
+                            backgroundColor: [
+                                '#667eea', '#f093fb', '#13f1fc', '#f9d423', '#ff4e50'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#8892b0', padding: 15 }
+                            }
+                        }
                     }
+                };
+
+                chartManager.createChart('rankChart', rankConfig);
+                updateRankChart();
+            };
+
+            const updateStats = () => {
+                const players = store.getState().players;
+                const stats = {
+                    online: players.filter(p => p.status === 'online').length,
+                    avgPlaytime: players.reduce((acc, p) => acc + p.playtime, 0) / players.length,
+                    totalMoney: players.reduce((acc, p) => acc + p.money, 0),
+                    activeServers: Math.floor(Math.random() * 10) + 5
+                };
+                store.dispatch('UPDATE_STATS', stats);
+            };
+
+            const renderAll = () => {
+                renderStats();
+                renderPlayersTable();
+            };
+
+            const renderStats = () => {
+                const stats = store.getState().stats;
+                const statsGrid = document.getElementById('statsGrid');
+
+                const statsCards = [
+                    {
+                        title: 'Joueurs en ligne',
+                        value: stats.online,
+                        icon: 'fa-users',
+                        color: 'var(--primary)',
+                        change: { value: 12.5, positive: true }
+                    },
+                    {
+                        title: 'Playtime moyen',
+                        value: utils.formatPlaytime(stats.avgPlaytime),
+                        icon: 'fa-clock',
+                        color: 'var(--success)',
+                        change: { value: 8.2, positive: true }
+                    },
+                    {
+                        title: 'Économie totale',
+                        value: utils.formatMoney(stats.totalMoney),
+                        icon: 'fa-dollar-sign',
+                        color: 'var(--warning)',
+                        change: { value: 23.1, positive: true }
+                    },
+                    {
+                        title: 'Serveurs actifs',
+                        value: `${stats.activeServers}/15`,
+                        icon: 'fa-server',
+                        color: 'var(--secondary)',
+                        change: { value: 2, positive: false, text: 'hors ligne' }
+                    }
+                ];
+
+                statsGrid.innerHTML = statsCards.map(card => `
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">${card.title}</span>
+                            <div class="stat-icon" style="background: ${card.color};">
+                                <i class="fas ${card.icon}"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">${card.value}</div>
+                        <span class="stat-change ${card.change.positive ? 'positive' : 'negative'}">
+                            <i class="fas fa-arrow-${card.change.positive ? 'up' : 'down'}"></i>
+                            ${card.change.value}${card.change.text ? ' ' + card.change.text : '% vs hier'}
+                        </span>
+                    </div>
+                `).join('');
+            };
+
+            const renderPlayersTable = () => {
+                const state = store.getState();
+                let players = [...state.players];
+
+                // Apply filters
+                players = players.filter(player => {
+                    const matchStatus = !state.filters.status || player.status === state.filters.status;
+                    const matchRank = !state.filters.rank || player.rank === state.filters.rank;
+                    const matchMoney = player.money >= (state.filters.moneyMin || 0) &&
+                        player.money <= (state.filters.moneyMax || 999999);
+                    const matchSearch = !state.filters.search ||
+                        player.name.toLowerCase().includes(state.filters.search.toLowerCase());
+
+                    return matchStatus && matchRank && matchMoney && matchSearch;
+                });
+
+                // Apply sort
+                players.sort((a, b) => {
+                    const field = state.sort.field;
+                    const direction = state.sort.direction === 'asc' ? 1 : -1;
+
+                    if (field === 'money' || field === 'playtime') {
+                        return (a[field] - b[field]) * direction;
+                    }
+
+                    return a[field].toString().localeCompare(b[field].toString()) * direction;
+                });
+
+                // Pagination
+                const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+                const endIndex = startIndex + state.itemsPerPage;
+                const paginatedPlayers = players.slice(startIndex, endIndex);
+
+                // Render table
+                const tbody = document.getElementById('playersTableBody');
+                tbody.innerHTML = paginatedPlayers.map(player => `
+                    <tr data-player-id="${player.id}">
+                        <td>
+                            <div class="player-info">
+                                <div class="player-avatar">${player.avatar}</div>
+                                <span>${player.name}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="player-status status-${player.status}">
+                                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                                ${getStatusText(player.status)}
+                            </span>
+                        </td>
+                        <td>${utils.formatPlaytime(player.playtime)}</td>
+                        <td>${utils.formatMoney(player.money)}</td>
+                        <td>
+                            <span style="padding: 0.25rem 0.75rem; background: var(--glass); border-radius: 20px;">
+                                ${player.rank}
+                            </span>
+                        </td>
+                        <td>${utils.formatDate(player.lastSeen)}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn" onclick="App.editPlayer(${player.id})" title="Éditer">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn" onclick="App.duplicatePlayer(${player.id})" title="Dupliquer">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button class="action-btn danger" onclick="App.deletePlayer(${player.id})" title="Supprimer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Render pagination
+                renderPagination(players.length);
+            };
+
+            const renderPagination = (totalItems) => {
+                const state = store.getState();
+                const totalPages = Math.ceil(totalItems / state.itemsPerPage);
+                const pagination = document.getElementById('pagination');
+
+                if (totalPages <= 1) {
+                    pagination.innerHTML = '';
+                    return;
                 }
-            }
-        }
-        
-        // Boucle d'animation principale
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Rendu des nébuleuses
-            nebulae.forEach(nebula => nebula.render());
-            
-            // Mise à jour des orbes
-            orbs.forEach(orb => orb.update());
-            
-            // Mise à jour et rendu des étoiles
-            stars.forEach(star => {
-                star.update();
-                star.render();
-            });
-            
-            // Rendu des constellations
-            renderConstellations();
-            
-            // Génération aléatoire d'étoiles filantes
-            if (Math.random() < CONFIG.SHOOTING_STAR_CHANCE) {
-                shootingStars.push(new ShootingStar());
-            }
-            
-            // Mise à jour et rendu des étoiles filantes
-            shootingStars = shootingStars.filter(star => {
-                const isAlive = star.update();
-                if (isAlive) star.render();
-                return isAlive;
-            });
-            
-            animationId = requestAnimationFrame(animate);
-        }
-        
-        // Toggle formulaire de contact
-        function toggleContact() {
-            const form = document.getElementById('contactForm');
-            form.classList.toggle('active');
-        }
-        
-        // Curseur glow
-        const cursorGlow = document.getElementById('cursorGlow');
-        
-        // Gestionnaires d'événements
-        function handleResize() {
-            initCanvas();
-            initStars();
-        }
-        
-        function handleMouseMove(event) {
-            mousePosition.x = event.clientX;
-            mousePosition.y = event.clientY;
-            
-            // Déplacer le curseur glow
-            if (cursorGlow) {
-                cursorGlow.style.left = event.clientX + 'px';
-                cursorGlow.style.top = event.clientY + 'px';
-            }
-        }
-        
-        // Clic global pour fermer le panel
-        function handleGlobalClick(event) {
-            const panel = document.getElementById('orbInfoPanel');
-            const isClickOnPanel = panel.contains(event.target);
-            const isClickOnOrb = event.target.closest('.space-orb');
-            
-            // Si on clique ailleurs que sur le panel ou une orbe, fermer le panel
-            if (!isClickOnPanel && !isClickOnOrb && currentOpenOrb) {
-                closeOrbInfo();
-            }
-        }
-        
-        // Gestion des liens de navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-                this.classList.add('active');
-            });
+
+                const pages = [];
+                const maxVisible = 5;
+                const halfVisible = Math.floor(maxVisible / 2);
+
+                let start = Math.max(1, state.currentPage - halfVisible);
+                let end = Math.min(totalPages, start + maxVisible - 1);
+
+                if (end - start < maxVisible - 1) {
+                    start = Math.max(1, end - maxVisible + 1);
+                }
+
+                pagination.innerHTML = `
+                    <button class="pagination-btn" ${state.currentPage === 1 ? 'disabled' : ''} 
+                            onclick="App.changePage(${state.currentPage - 1})">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    
+                    ${start > 1 ? '<button class="pagination-btn" onclick="App.changePage(1)">1</button>' : ''}
+                    ${start > 2 ? '<span>...</span>' : ''}
+                    
+                    ${Array.from({ length: end - start + 1 }, (_, i) => start + i).map(page => `
+                        <button class="pagination-btn ${page === state.currentPage ? 'active' : ''}" 
+                                onclick="App.changePage(${page})">
+                            ${page}
+                        </button>
+                    `).join('')}
+                    
+                    ${end < totalPages - 1 ? '<span>...</span>' : ''}
+                    ${end < totalPages ? `<button class="pagination-btn" onclick="App.changePage(${totalPages})">${totalPages}</button>` : ''}
+                    
+                    <button class="pagination-btn" ${state.currentPage === totalPages ? 'disabled' : ''} 
+                            onclick="App.changePage(${state.currentPage + 1})">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    
+                    <span class="pagination-info">
+                        ${(state.currentPage - 1) * state.itemsPerPage + 1}-${Math.min(state.currentPage * state.itemsPerPage, totalItems)} sur ${totalItems}
+                    </span>
+                `;
+            };
+
+            const getStatusText = (status) => {
+                const statusTexts = {
+                    online: 'En ligne',
+                    idle: 'Inactif',
+                    offline: 'Hors ligne'
+                };
+                return statusTexts[status] || status;
+            };
+
+            const updatePlaytimeChart = (days) => {
+                const labels = [];
+                const data = [];
+
+                for (let i = days - 1; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    labels.push(date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' }));
+                    data.push(Math.floor(Math.random() * 500) + 200);
+                }
+
+                chartManager.updateChart('playtimeChart', {
+                    labels,
+                    datasets: [{
+                        label: 'Heures jouées',
+                        data,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                });
+            };
+
+            const updateRankChart = () => {
+                const players = store.getState().players;
+                const rankCounts = {};
+
+                players.forEach(player => {
+                    rankCounts[player.rank] = (rankCounts[player.rank] || 0) + 1;
+                });
+
+                chartManager.updateChart('rankChart', {
+                    labels: Object.keys(rankCounts),
+                    datasets: [{
+                        data: Object.values(rankCounts),
+                        backgroundColor: [
+                            '#667eea', '#f093fb', '#13f1fc', '#f9d423', '#ff4e50'
+                        ],
+                        borderWidth: 0
+                    }]
+                });
+            };
+
+            const openPlayerModal = () => {
+                const modal = document.getElementById('playerModal');
+                const player = store.getState().currentEditingPlayer;
+
+                if (player) {
+                    document.getElementById('modalTitle').textContent = 'Éditer le joueur';
+                    document.getElementById('playerName').value = player.name;
+                    document.getElementById('playerMoney').value = player.money;
+                    document.getElementById('playerRank').value = player.rank;
+                    document.getElementById('playerStatus').value = player.status;
+                    document.getElementById('playerData').value = JSON.stringify(player.data, null, 2);
+                } else {
+                    document.getElementById('modalTitle').textContent = 'Ajouter un joueur';
+                    document.getElementById('playerForm').reset();
+                    document.getElementById('playerData').value = '{}';
+                }
+
+                modal.classList.add('active');
+            };
+
+            const closeModal = (modalId) => {
+                document.getElementById(modalId)?.classList.remove('active');
+            };
+
+            const savePlayer = () => {
+                const form = document.getElementById('playerForm');
+                const formData = new FormData(form);
+
+                // Validation
+                const name = document.getElementById('playerName').value.trim();
+                const money = parseInt(document.getElementById('playerMoney').value);
+                const dataStr = document.getElementById('playerData').value;
+
+                if (!name) {
+                    document.getElementById('playerNameError').textContent = 'Le nom est requis';
+                    return;
+                }
+
+                if (!utils.validateJSON(dataStr)) {
+                    document.getElementById('playerDataError').textContent = 'JSON invalide';
+                    return;
+                }
+
+                const playerData = {
+                    name,
+                    money,
+                    rank: document.getElementById('playerRank').value,
+                    status: document.getElementById('playerStatus').value,
+                    data: JSON.parse(dataStr)
+                };
+
+                const state = store.getState();
+                let players = [...state.players];
+
+                if (state.currentEditingPlayer) {
+                    // Update existing player
+                    const index = players.findIndex(p => p.id === state.currentEditingPlayer.id);
+                    players[index] = { ...players[index], ...playerData, updatedAt: new Date() };
+                    notificationManager.show('Joueur modifié avec succès', 'success');
+                } else {
+                    // Add new player
+                    const newPlayer = playerFactory(playerData);
+                    players.push(newPlayer);
+                    notificationManager.show('Joueur ajouté avec succès', 'success');
+                }
+
+                store.dispatch('UPDATE_PLAYERS', players);
+                updateStats();
+                renderAll();
+                updateRankChart();
+                closeModal('playerModal');
+            };
+
+            const editPlayer = (playerId) => {
+                const player = store.getState().players.find(p => p.id === playerId);
+                if (player) {
+                    store.setState({ currentEditingPlayer: player });
+                    openPlayerModal();
+                }
+            };
+
+            const duplicatePlayer = (playerId) => {
+                const player = store.getState().players.find(p => p.id === playerId);
+                if (player) {
+                    const newPlayer = playerFactory({
+                        ...player,
+                        id: Date.now(),
+                        name: `${player.name} (copie)`
+                    });
+
+                    const players = [...store.getState().players, newPlayer];
+                    store.dispatch('UPDATE_PLAYERS', players);
+                    updateStats();
+                    renderAll();
+                    updateRankChart();
+                    notificationManager.show('Joueur dupliqué avec succès', 'success');
+                }
+            };
+
+            const deletePlayer = (playerId) => {
+                const player = store.getState().players.find(p => p.id === playerId);
+                if (player && confirm(`Êtes-vous sûr de vouloir supprimer ${player.name} ?`)) {
+                    const players = store.getState().players.filter(p => p.id !== playerId);
+                    store.dispatch('UPDATE_PLAYERS', players);
+                    updateStats();
+                    renderAll();
+                    updateRankChart();
+                    notificationManager.show(`${player.name} a été supprimé`, 'error');
+                }
+            };
+
+            const changePage = (page) => {
+                store.dispatch('SET_PAGE', page);
+                renderPlayersTable();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const handleQuickAction = (action) => {
+                const actions = {
+                    broadcast: () => {
+                        const message = prompt('Message à diffuser:');
+                        if (message) {
+                            notificationManager.show(`Broadcast envoyé: "${message}"`, 'success');
+                        }
+                    },
+                    restart: () => {
+                        if (confirm('Redémarrer le serveur ?')) {
+                            notificationManager.show('Serveur en cours de redémarrage...', 'warning');
+                            setTimeout(() => {
+                                notificationManager.show('Serveur redémarré avec succès', 'success');
+                            }, 3000);
+                        }
+                    },
+                    backup: () => {
+                        notificationManager.show('Backup en cours...', 'info');
+                        const data = store.getState();
+                        const backup = {
+                            timestamp: new Date().toISOString(),
+                            data
+                        };
+                        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `backup_${Date.now()}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        notificationManager.show('Backup terminé', 'success');
+                    }
+                };
+
+                actions[action]?.();
+            };
+
+            const startRealtimeSimulation = () => {
+                // Simulate player status changes
+                setInterval(() => {
+                    const players = store.getState().players;
+                    const randomPlayer = players[Math.floor(Math.random() * players.length)];
+                    if (randomPlayer && Math.random() > 0.7) {
+                        const statuses = ['online', 'idle', 'offline'];
+                        randomPlayer.status = statuses[Math.floor(Math.random() * statuses.length)];
+                        randomPlayer.lastSeen = new Date();
+                        store.dispatch('UPDATE_PLAYERS', players);
+                        updateStats();
+                        renderPlayersTable();
+                    }
+                }, 10000);
+
+                // Update stats
+                setInterval(() => {
+                    updateStats();
+                    renderStats();
+                }, 30000);
+
+                // Update notification count
+                let notificationCount = 0;
+                setInterval(() => {
+                    if (Math.random() > 0.8) {
+                        notificationCount++;
+                        const badge = document.getElementById('notificationCount');
+                        if (badge) {
+                            badge.textContent = notificationCount;
+                            badge.style.display = notificationCount > 0 ? 'flex' : 'none';
+                        }
+                    }
+                }, 20000);
+
+                document.getElementById('notificationBtn')?.addEventListener('click', () => {
+                    notificationCount = 0;
+                    const badge = document.getElementById('notificationCount');
+                    if (badge) {
+                        badge.textContent = '0';
+                        badge.style.display = 'none';
+                    }
+                    notificationManager.show('Notifications marquées comme lues', 'info');
+                });
+            };
+
+            // Public API
+            return {
+                init,
+                editPlayer,
+                duplicatePlayer,
+                deletePlayer,
+                changePage
+            };
+        })();
+
+        // Initialisation de l'application
+        document.addEventListener('DOMContentLoaded', () => {
+            App.init();
         });
-        
-        // Initialisation
-        function init() {
-            initCanvas();
-            initStars();
-            initOrbs();
-            animate();
-            
-            // Event listeners
-            window.addEventListener('resize', handleResize);
-            window.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('click', handleGlobalClick);
-        }
-        
-        // Nettoyage
-        function cleanup() {
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('click', handleGlobalClick);
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-            }
-        }
-        
-        // Démarrage
-        init();
-        
-        // Nettoyage au déchargement de la page
-        window.addEventListener('beforeunload', cleanup);
     </script>
 </body>
+
 </html>
